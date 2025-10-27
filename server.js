@@ -1,74 +1,102 @@
 const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+
 const app = express();
+app.use(cors());
 app.use(express.json());
-var books=[
-    {id:1, name:"Java", qty:1},
-    {id:2, name:"Python", qty:2},
-    {id:3, name:"Java", qty:3}
-];
-app.get("/",(req,res)=>{
-    res.send("Hello world");
-});
-app.get("/books",(req, res)=> {
-    const id=parseInt(req.params.bid);
-    const book=books.find((b1)=>b1.id===id);
-    if(book) {
-        res.json(book);
-    }
-    else {
-        res.status(404).json({msg:"Book not found"});
 
-    }
-});
+// ---------------- MongoDB Connection ----------------
+const connectDB = async () => {
+  try {
+    const conn = await mongoose.connect("mongodb://127.0.0.1:27017/ems");
+    console.log("✅ Connected to MongoDB:", conn.connection.name);
+  } catch (err) {
+    console.log("❌ MongoDB Connection Error:", err.message);
+  }
+};
+connectDB();
 
-app.post("/books",(req, res)=>{
-    const {id,name,qty}=req.body;
-    const newBook={id, name,qty};
-    books.push(newBook);
-    res.json({book:newBook, msg:"Book added successfully"});
-
-
+// ---------------- Schema & Model ----------------
+const employeeSchema = new mongoose.Schema({
+  id: Number,
+  name: String,
+  department: String,
+  designation: String,
+  salary: Number,
 });
 
-app.put("/books/:bid",(req,res)=>{
-    const id = parseInt(req.params.bid);
-    
-    const {name} = req.body;
-    
-    const bookIndex = books.findIndex((b1)=> b1.id === id);
-    
-    if(bookIndex != -1){
-        books[bookIndex] = {...books[bookIndex],name};
-        res.json({updatedBook:books[bookIndex],msg:"Book updated successfully"});
-    }else{
-        res.status(404).json({msg:"Book not found"});
-        
-    }
+const Employee = mongoose.model("Employees", employeeSchema);
+
+// ------------------- Routes -------------------
+
+// ✅ Default route
+app.get("/", (req, res) => {
+  res.send("Employee Management System API is running...");
 });
 
-app.delete("/books/:bid",(req,res)=>{
-    const id = parseInt(req.params.bid);
-
-    const bookIndex = books.findIndex((b1)=> b1.id === id);
-    
-     
-    if(bookIndex != -1){
-        books.splice(bookIndex,1);
-        res.json({msg:"Book deleted successfully"});
-    }else{
-        res.status(404).json({msg:"Book not found"});
-        
-    }
-})
-
-
-app.listen(3000,(req,res)=>{
-console.log("Server Started at Port 3000");
+// ✅ Get all employees
+app.get("/employees", async (req, res) => {
+  try {
+    const employees = await Employee.find({}, { _v: 0, _id: 0 });
+    res.json(employees);
+  } catch (err) {
+    res.status(500).json({ msg: err.message });
+  }
 });
 
+// ✅ Get single employee by ID
+app.get("/employees/:eid", async (req, res) => {
+  const id = parseInt(req.params.eid);
+  try {
+    const employee = await Employee.findOne({ id: id }, { _v: 0, _id: 0 });
+    if (!employee) return res.status(404).json({ msg: "Employee not found" });
+    res.json(employee);
+  } catch (err) {
+    res.status(500).json({ msg: err.message });
+  }
+});
 
+// ✅ Add a new employee
+app.post("/employees", async (req, res) => {
+  const { id, name, department, designation, salary } = req.body;
+  try {
+    const newEmployee = new Employee({ id, name, department, designation, salary });
+    await newEmployee.save();
+    res.json({ msg: "Employee added successfully", employee: newEmployee });
+  } catch (err) {
+    res.status(400).json({ msg: err.message });
+  }
+});
 
+// ✅ Update employee by ID
+app.put("/employees/:eid", async (req, res) => {
+  const id = parseInt(req.params.eid);
+  try {
+    const result = await Employee.updateOne(
+      { id: id },
+      { $set: req.body }
+    );
+    if (result.matchedCount === 0)
+      return res.status(404).json({ msg: "Employee not found" });
+    res.json({ msg: "Employee updated successfully" });
+  } catch (err) {
+    res.status(500).json({ msg: err.message });
+  }
+});
 
-app.listen(3000,(req,res)=>{
-    console.log("Started");
-})
+// ✅ Delete employee by ID
+app.delete("/employees/:eid", async (req, res) => {
+  const id = parseInt(req.params.eid);
+  try {
+    const result = await Employee.deleteOne({ id: id });
+    if (result.deletedCount === 0)
+      return res.status(404).json({ msg: "Employee not found" });
+    res.json({ msg: "Employee deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ msg: err.message });
+  }
+});
+
+// ---------------- Start Server ----------------
+app.listen(3000, () => console.log("🚀 Server running on http://localhost:3000"));
