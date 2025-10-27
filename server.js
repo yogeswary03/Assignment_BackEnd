@@ -10,9 +10,9 @@ app.use(express.json());
 const connectDB = async () => {
   try {
     const conn = await mongoose.connect("mongodb://127.0.0.1:27017/ems");
-    console.log("✅ Connected to MongoDB:", conn.connection.name);
+    console.log("Connected to MongoDB:", conn.connection.name);
   } catch (err) {
-    console.log("❌ MongoDB Connection Error:", err.message);
+    console.log("MongoDB Connection Error:", err.message);
   }
 };
 connectDB();
@@ -30,12 +30,12 @@ const Employee = mongoose.model("Employees", employeeSchema);
 
 // ------------------- Routes -------------------
 
-// ✅ Default route
+//  Default route
 app.get("/", (req, res) => {
   res.send("Employee Management System API is running...");
 });
 
-// ✅ Get all employees
+//  Get all employees
 app.get("/employees", async (req, res) => {
   try {
     const employees = await Employee.find({}, { _v: 0, _id: 0 });
@@ -45,7 +45,7 @@ app.get("/employees", async (req, res) => {
   }
 });
 
-// ✅ Get single employee by ID
+//  Get single employee by ID
 app.get("/employees/:eid", async (req, res) => {
   const id = parseInt(req.params.eid);
   try {
@@ -57,7 +57,7 @@ app.get("/employees/:eid", async (req, res) => {
   }
 });
 
-// ✅ Add a new employee
+//  Add a new employee
 app.post("/employees", async (req, res) => {
   const { id, name, department, designation, salary } = req.body;
   try {
@@ -69,7 +69,7 @@ app.post("/employees", async (req, res) => {
   }
 });
 
-// ✅ Update employee by ID
+// Update employee by ID
 app.put("/employees/:eid", async (req, res) => {
   const id = parseInt(req.params.eid);
   try {
@@ -85,7 +85,7 @@ app.put("/employees/:eid", async (req, res) => {
   }
 });
 
-// ✅ Delete employee by ID
+//  Delete employee by ID
 app.delete("/employees/:eid", async (req, res) => {
   const id = parseInt(req.params.eid);
   try {
